@@ -87,12 +87,20 @@ export default async function DashboardPage() {
             My Schedule
           </Link>
           {isAdmin && (
-            <Link
-              href="/admin/timesheets"
-              className="text-sm text-muted-foreground hover:underline"
-            >
-              Timesheets
-            </Link>
+            <>
+              <Link
+                href="/admin/employees"
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                Employees
+              </Link>
+              <Link
+                href="/admin/timesheets"
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                Timesheets
+              </Link>
+            </>
           )}
           <SignOutButton />
         </div>
