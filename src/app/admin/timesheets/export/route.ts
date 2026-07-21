@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   const { data: timesheets, error } = await supabase
     .from("timesheets")
-    .select("regular_hours, overtime_hours, total_hours, status, employees(full_name, email)")
+    .select("regular_hours, overtime_hours, total_hours, status, employees!timesheets_employee_id_fkey(full_name, email)")
     .eq("pay_period_id", payPeriodId)
     .eq("status", "approved");
 

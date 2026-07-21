@@ -72,7 +72,7 @@ export default async function AdminTimesheetsPage({
       await Promise.all([
         supabase
           .from("timesheets")
-          .select("id, employee_id, regular_hours, overtime_hours, total_hours, status, employees(full_name)")
+          .select("id, employee_id, regular_hours, overtime_hours, total_hours, status, employees!timesheets_employee_id_fkey(full_name)")
           .eq("pay_period_id", selectedPeriod.id),
         supabase.rpc("list_missing_punches", {
           p_pay_period_id: selectedPeriod.id,

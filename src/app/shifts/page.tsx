@@ -67,7 +67,7 @@ export default async function ShiftsPage({
   if (isAdmin) {
     const { data: pending } = await supabase
       .from("shift_claims")
-      .select("id, shift_id, claimed_at, employees(full_name)")
+      .select("id, shift_id, claimed_at, employees!shift_claims_employee_id_fkey(full_name)")
       .eq("status", "pending")
       .order("claimed_at");
 
