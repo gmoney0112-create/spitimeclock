@@ -21,8 +21,13 @@ import {
 } from "@/app/shifts/actions";
 import type { Shift } from "@/types/database";
 
-export default async function ShiftsPage() {
+export default async function ShiftsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const profile = await getCurrentEmployee();
+  const { error: actionError } = await searchParams;
 
   if (!profile) {
     return (
@@ -94,6 +99,12 @@ export default async function ShiftsPage() {
           </Link>
         </div>
       </div>
+
+      {actionError && (
+        <p className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          {actionError}
+        </p>
+      )}
 
       {isAdmin && (
         <Card>

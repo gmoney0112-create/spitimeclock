@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { getCurrentEmployee } from "@/lib/get-current-employee";
+import { redirectWithError } from "@/lib/action-error";
 
 export async function postShift(formData: FormData) {
   const admin = await requireAdmin();
@@ -53,11 +54,10 @@ export async function approveClaim(claimId: string) {
   const { error } = await supabase.rpc("approve_shift_claim", {
     p_claim_id: claimId,
   });
-  if (error) return { error: error.message };
+  if (error) redirectWithError("/shifts", error.message);
 
   revalidatePath("/shifts");
   revalidatePath("/schedule");
-  return { error: null };
 }
 
 export async function denyClaim(claimId: string) {
@@ -67,10 +67,9 @@ export async function denyClaim(claimId: string) {
   const { error } = await supabase.rpc("deny_shift_claim", {
     p_claim_id: claimId,
   });
-  if (error) return { error: error.message };
+  if (error) redirectWithError("/shifts", error.message);
 
   revalidatePath("/shifts");
-  return { error: null };
 }
 
 export async function cancelShift(shiftId: string) {

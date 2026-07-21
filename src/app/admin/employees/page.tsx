@@ -15,9 +15,14 @@ import {
 import { addEmployee, updateEmployee, setEmployeeStatus } from "./actions";
 import type { Employee } from "@/types/database";
 
-export default async function AdminEmployeesPage() {
+export default async function AdminEmployeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   await requireAdmin();
   const supabase = await createClient();
+  const { error } = await searchParams;
 
   const { data: employees } = await supabase
     .from("employees")
@@ -33,6 +38,12 @@ export default async function AdminEmployeesPage() {
           Back to dashboard
         </Link>
       </div>
+
+      {error && (
+        <p className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       <Card>
         <CardHeader>

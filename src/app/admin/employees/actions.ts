@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { redirectWithError } from "@/lib/action-error";
 import type { EmployeeRole, PayType } from "@/types/database";
 
 export async function addEmployee(formData: FormData) {
@@ -27,10 +28,12 @@ export async function addEmployee(formData: FormData) {
     hire_date: hire_date || undefined,
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    const message = error.code === "23505" ? `${email} is already in use.` : error.message;
+    redirectWithError("/admin/employees", message);
+  }
 
   revalidatePath("/admin/employees");
-  return { error: null };
 }
 
 export async function updateEmployee(formData: FormData) {
