@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentEmployee } from "@/lib/get-current-employee";
 import { ClockPanel } from "@/components/clock-panel";
@@ -78,7 +79,17 @@ export default async function DashboardPage() {
           <p className="font-medium">{profile.full_name}</p>
           <p className="text-sm text-muted-foreground">{profile.role}</p>
         </div>
-        <SignOutButton />
+        <div className="flex items-center gap-4">
+          {isAdmin && (
+            <Link
+              href="/admin/timesheets"
+              className="text-sm text-muted-foreground hover:underline"
+            >
+              Timesheets
+            </Link>
+          )}
+          <SignOutButton />
+        </div>
       </div>
 
       <div className="flex w-full max-w-3xl flex-wrap justify-center gap-6">
