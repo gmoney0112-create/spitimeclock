@@ -25,15 +25,14 @@ export async function postShift(formData: FormData) {
     posted_by: admin.id,
   });
 
-  if (error) return { error: error.message };
+  if (error) redirectWithError("/shifts", error.message);
 
   revalidatePath("/shifts");
-  return { error: null };
 }
 
 export async function claimShift(shiftId: string) {
   const profile = await getCurrentEmployee();
-  if (!profile) return { error: "No employee profile found." };
+  if (!profile) redirectWithError("/shifts", "No employee profile found.");
 
   const supabase = await createClient();
   const { error } = await supabase.from("shift_claims").insert({
@@ -41,10 +40,9 @@ export async function claimShift(shiftId: string) {
     employee_id: profile.id,
   });
 
-  if (error) return { error: error.message };
+  if (error) redirectWithError("/shifts", error.message);
 
   revalidatePath("/shifts");
-  return { error: null };
 }
 
 export async function approveClaim(claimId: string) {
@@ -81,8 +79,7 @@ export async function cancelShift(shiftId: string) {
     .update({ status: "cancelled" })
     .eq("id", shiftId);
 
-  if (error) return { error: error.message };
+  if (error) redirectWithError("/shifts", error.message);
 
   revalidatePath("/shifts");
-  return { error: null };
 }
