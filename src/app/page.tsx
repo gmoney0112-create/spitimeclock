@@ -86,6 +86,9 @@ export default async function DashboardPage() {
           <Link href="/schedule" className="text-sm text-muted-foreground hover:underline">
             My Schedule
           </Link>
+          <Link href="/timesheets" className="text-sm text-muted-foreground hover:underline">
+            My Timesheets
+          </Link>
           {isAdmin && (
             <>
               <Link

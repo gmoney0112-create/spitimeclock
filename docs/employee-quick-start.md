@@ -26,6 +26,10 @@ That's it — the button and badge update immediately. If you forget to clock ou
 
 Click **My Schedule** from the dashboard (or go to `/schedule`) to see every shift you've been approved for, soonest first.
 
+## Check your hours
+
+Click **My Timesheets** from the dashboard (or go to `/timesheets`) to see your regular, overtime, and total hours for each pay period, along with its status (pending review, approved). Hours appear here once your admin runs the calculation for that pay period — they won't show up in real time as you clock in/out.
+
 ## Signing out
 
 Click **Sign out** in the top-right corner of the dashboard.
