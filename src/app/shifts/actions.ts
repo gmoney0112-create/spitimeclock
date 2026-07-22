@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/require-admin";
@@ -28,6 +29,7 @@ export async function postShift(formData: FormData) {
   if (error) redirectWithError("/shifts", error.message);
 
   revalidatePath("/shifts");
+  redirect("/shifts");
 }
 
 export async function claimShift(shiftId: string) {
