@@ -45,6 +45,8 @@ export default async function AdminTimesheetsPage({
     .eq("status", "active")
     .order("full_name");
 
+  const { data: flaggedPunches } = await supabase.rpc("list_flagged_punches");
+
   let timesheetRows: {
     id: string;
     employee_id: string;
@@ -177,6 +179,40 @@ export default async function AdminTimesheetsPage({
               Create pay period
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Flagged Punches (Out of Geofence)</CardTitle>
+          <CardDescription>
+            Clock-ins/outs recorded outside the assigned site&apos;s radius —
+            recorded, not blocked, but worth a look.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(flaggedPunches ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">None flagged.</p>
+          ) : (
+            <ul className="flex flex-col gap-1 text-sm">
+              {(flaggedPunches ?? []).map(
+                (p: {
+                  punch_id: string;
+                  full_name: string;
+                  shift_title: string | null;
+                  site_name: string | null;
+                  punch_type: string;
+                  punch_timestamp: string;
+                }) => (
+                  <li key={p.punch_id}>
+                    {p.full_name} — {p.punch_type} at{" "}
+                    {new Date(p.punch_timestamp).toLocaleString()}
+                    {p.site_name ? ` — expected near ${p.site_name}` : ""}
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

@@ -19,7 +19,7 @@ import {
   denyClaim,
   cancelShift,
 } from "@/app/shifts/actions";
-import type { Shift } from "@/types/database";
+import type { Shift, Site } from "@/types/database";
 
 export default async function ShiftsPage({
   searchParams,
@@ -44,11 +44,17 @@ export default async function ShiftsPage({
 
   const { data: shifts } = await supabase
     .from("shifts")
-    .select("*")
+    .select("*, sites(name)")
     .in("status", ["open", "claimed"])
     .order("date")
     .order("start_time")
-    .returns<Shift[]>();
+    .returns<(Shift & { sites: { name: string } | { name: string }[] | null })[]>();
+
+  const { data: sites } = isAdmin
+    ? await supabase.from("sites").select("id, name").order("name").returns<
+        Pick<Site, "id" | "name">[]
+      >()
+    : { data: null };
 
   const { data: ownClaims } = await supabase
     .from("shift_claims")
@@ -139,6 +145,22 @@ export default async function ShiftsPage({
                 <Label htmlFor="role_needed">Role (optional)</Label>
                 <Input id="role_needed" name="role_needed" />
               </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="site_id">Site (optional)</Label>
+                <select
+                  id="site_id"
+                  name="site_id"
+                  defaultValue=""
+                  className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                >
+                  <option value="">No site (office / general)</option>
+                  {(sites ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <Button type="submit" size="sm">
                 Post Shift
               </Button>
@@ -151,6 +173,7 @@ export default async function ShiftsPage({
         {(shifts ?? []).map((shift) => {
           const ownStatus = ownClaimByShift.get(shift.id);
           const pending = pendingClaimsByShift.get(shift.id) ?? [];
+          const site = Array.isArray(shift.sites) ? shift.sites[0] : shift.sites;
 
           return (
             <Card key={shift.id}>
@@ -164,6 +187,7 @@ export default async function ShiftsPage({
                 <CardDescription>
                   {shift.date} · {shift.start_time}–{shift.end_time}
                   {shift.role_needed ? ` · ${shift.role_needed}` : ""}
+                  {site ? ` · ${site.name}` : ""}
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">

@@ -80,6 +80,18 @@ export interface Shift {
   role_needed: string | null;
   status: ShiftStatus;
   posted_by: string;
+  site_id: string | null;
+  created_at: string;
+}
+
+export interface Site {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  geofence_radius_meters: number;
+  client_notes: string | null;
   created_at: string;
 }
 

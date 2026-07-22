@@ -16,6 +16,7 @@ export async function postShift(formData: FormData) {
   const start_time = String(formData.get("start_time") ?? "");
   const end_time = String(formData.get("end_time") ?? "");
   const role_needed = String(formData.get("role_needed") ?? "") || null;
+  const site_id = String(formData.get("site_id") ?? "") || null;
 
   const { error } = await supabase.from("shifts").insert({
     title,
@@ -23,6 +24,7 @@ export async function postShift(formData: FormData) {
     start_time,
     end_time,
     role_needed,
+    site_id,
     posted_by: admin.id,
   });
 

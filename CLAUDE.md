@@ -334,3 +334,67 @@ Weekend is buffer, not a planned work day — if Days 1–4 slip, it absorbs the
 3. Decide MVP clock-in mode: individual login (Option A) vs. shared kiosk (Option B) — recommend starting with A
 4. Apply the migration in §14 as the first Supabase step, then build week-by-week (§8) or day-by-day (§9) against this file
 5. Run payroll in parallel (old method + new system) for one full pay period before fully cutting over
+
+---
+
+# Part 2: Field Ops Upgrade — GPS Sites, Geofenced Clock-In, PWA
+
+Everything below extends the MVP above rather than replacing it. It adapts the "Stars PI Field Ops" blueprint onto the schema and app that already exist — table names below are the real ones in this codebase, not a fresh rebuild, so the mapping is called out explicitly where it differs from a from-scratch design.
+
+## 16. What Carries Over vs. What's New
+
+The original MVP already covers several items this upgrade blueprint calls for — no rebuild needed:
+
+| Upgrade blueprint feature | Status |
+|---|---|
+| Auth & roles | Already built (`employees.role`: admin/office_manager/employee — this *is* the `profiles` table the upgrade blueprint describes, just named `employees`) |
+| Shift builder, staff schedule view, open-shift marketplace | Already built (`shifts` + `shift_claims`, race-safe via the partial unique index) |
+| Basic timesheet report, payroll CSV export | Already built (`/admin/timesheets`, `/timesheets`, CSV export) |
+| pay_rate | Already built (`employees.hourly_rate`) |
+
+Net-new work is: **`sites`, GPS-verified clock-in/out, linking shifts to sites, PWA installability, live location view, flagged out-of-geofence review.** SMS notifications, shift swaps, and the labor-cost dashboard are real Phase 2 items from the upgrade blueprint and stay deferred until asked for — same sprint discipline as Part 1.
+
+## 17. Schema Additions
+
+```
+sites
+- id (uuid, pk)
+- name
+- address
+- latitude
+- longitude
+- geofence_radius_meters (default 150)
+- client_notes (text, nullable)
+- created_at
+
+shifts  (existing table, gets one new column)
+- site_id (fk → sites, nullable — a shift can still be site-less, e.g. office work)
+
+time_punches  (existing table, gets four new columns)
+- shift_id (fk → shifts, nullable — which shift this punch belongs to, if any)
+- latitude (numeric, nullable — captured at the moment of the punch)
+- longitude (numeric, nullable)
+- within_geofence (boolean, nullable — null when there's no site to check against; true/false once there is)
+```
+
+**Design decision:** flag, don't block. An out-of-geofence punch still records — GPS drift near buildings is common, and hard-blocking a punch would generate support tickets, not better data. `within_geofence = false` just puts it in the admin's review queue. Raw lat/lng is stored regardless of flag status, since that's the audit trail if a client ever disputes coverage.
+
+**Design decision:** clock in/out stays a punch-based ledger, not a shift-scoped session table (the upgrade blueprint's `time_entries` design). Adding `shift_id` to the existing `time_punches` table gets the same geofencing capability without a second, parallel time-tracking model — an employee still just has one continuous punch history, optionally tagged with which shift each punch belongs to.
+
+## 18. GPS Geofencing — Implementation Notes
+
+- GPS is captured client-side only at the moment of the Clock In/Out tap (foreground-only) — no background tracking, which avoids battery drain, permissions friction, and the fact that browsers don't reliably support background geolocation anyway
+- Distance-to-site is computed with the Haversine formula against `sites.latitude`/`longitude` and compared to `geofence_radius_meters`
+- If the employee has no shift selected (or the shift has no site), the punch just records with no geofence check — this keeps the original office-based clock-in flow working unchanged
+- Site addresses are geocoded to lat/lng via a free geocoding API (OpenStreetMap Nominatim) — no Google Maps key or billing account required for MVP
+
+## 19. PWA
+
+Installable to a phone home screen via a web app manifest + service worker — no App Store review cycle needed for v1. This is what makes "field staff clock in from their phone" actually practical.
+
+## 20. Deferred (Phase 2/3 of the upgrade — same discipline as Part 1)
+
+- SMS notifications (new open shift, shift-starting-soon, missed clock-in) — needs a Twilio account (or GHL routing) before this can be wired up and tested, same credential-gating as Supabase/Vercel earlier
+- Shift swap requests, flagged-entry one-click correction workflow beyond basic review
+- Labor cost dashboard (hours × rate per site)
+- Phase 3: native app (Expo/React Native) for background geofencing and push notifications when the app is closed, client portal, photo/note check-ins, site history map

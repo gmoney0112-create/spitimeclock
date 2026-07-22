@@ -28,6 +28,35 @@ export default async function DashboardPage() {
     .limit(1)
     .maybeSingle();
 
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: activeShiftRows } = await supabase
+    .from("shift_claims")
+    .select("shifts!inner(id, title, date, sites(name))")
+    .eq("employee_id", profile.id)
+    .eq("status", "approved")
+    .eq("shifts.date", today)
+    .order("start_time", { foreignTable: "shifts" })
+    .limit(1);
+
+  const activeShiftRow = activeShiftRows?.[0];
+  const activeShiftEntry = activeShiftRow
+    ? Array.isArray(activeShiftRow.shifts)
+      ? activeShiftRow.shifts[0]
+      : activeShiftRow.shifts
+    : null;
+  const activeShiftSite = activeShiftEntry
+    ? Array.isArray(activeShiftEntry.sites)
+      ? activeShiftEntry.sites[0]
+      : activeShiftEntry.sites
+    : null;
+  const activeShift = activeShiftEntry
+    ? {
+        id: activeShiftEntry.id as string,
+        title: activeShiftEntry.title as string,
+        siteName: (activeShiftSite?.name as string | undefined) ?? null,
+      }
+    : null;
+
   const isAdmin = profile.role === "admin" || profile.role === "office_manager";
 
   let adminInitial: {
@@ -35,6 +64,8 @@ export default async function DashboardPage() {
     full_name: string;
     clockedIn: boolean;
     lastPunchAt: string | null;
+    siteName: string | null;
+    withinGeofence: boolean | null;
   }[] = [];
 
   if (isAdmin) {
@@ -46,18 +77,30 @@ export default async function DashboardPage() {
         .order("full_name"),
       supabase
         .from("time_punches")
-        .select("employee_id, punch_type, timestamp")
+        .select("employee_id, punch_type, timestamp, within_geofence, shifts(sites(name))")
         .order("timestamp", { ascending: false })
         .limit(500),
     ]);
 
     const latestByEmployee = new Map<
       string,
-      { punch_type: PunchType; timestamp: string }
+      {
+        punch_type: PunchType;
+        timestamp: string;
+        within_geofence: boolean | null;
+        siteName: string | null;
+      }
     >();
     for (const punch of recentPunches ?? []) {
       if (!latestByEmployee.has(punch.employee_id)) {
-        latestByEmployee.set(punch.employee_id, punch);
+        const shift = Array.isArray(punch.shifts) ? punch.shifts[0] : punch.shifts;
+        const site = shift ? (Array.isArray(shift.sites) ? shift.sites[0] : shift.sites) : null;
+        latestByEmployee.set(punch.employee_id, {
+          punch_type: punch.punch_type,
+          timestamp: punch.timestamp,
+          within_geofence: punch.within_geofence,
+          siteName: site?.name ?? null,
+        });
       }
     }
 
@@ -68,6 +111,8 @@ export default async function DashboardPage() {
         full_name: employee.full_name,
         clockedIn: latest?.punch_type === "clock_in",
         lastPunchAt: latest?.timestamp ?? null,
+        siteName: latest?.siteName ?? null,
+        withinGeofence: latest?.within_geofence ?? null,
       };
     });
   }
@@ -98,6 +143,12 @@ export default async function DashboardPage() {
                 Employees
               </Link>
               <Link
+                href="/admin/sites"
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                Sites
+              </Link>
+              <Link
                 href="/admin/timesheets"
                 className="text-sm text-muted-foreground hover:underline"
               >
@@ -113,6 +164,7 @@ export default async function DashboardPage() {
         <ClockPanel
           initiallyClockedIn={lastPunch?.punch_type === "clock_in"}
           lastPunchAt={lastPunch?.timestamp ?? null}
+          activeShift={activeShift}
         />
         {isAdmin && <AdminOnClock initial={adminInitial} />}
       </div>

@@ -17,6 +17,8 @@ type EmployeeStatus = {
   full_name: string;
   clockedIn: boolean;
   lastPunchAt: string | null;
+  siteName: string | null;
+  withinGeofence: boolean | null;
 };
 
 export function AdminOnClock({ initial }: { initial: EmployeeStatus[] }) {
@@ -35,6 +37,7 @@ export function AdminOnClock({ initial }: { initial: EmployeeStatus[] }) {
             employee_id: string;
             punch_type: PunchType;
             timestamp: string;
+            within_geofence: boolean | null;
           };
 
           setStatuses((current) =>
@@ -44,6 +47,7 @@ export function AdminOnClock({ initial }: { initial: EmployeeStatus[] }) {
                     ...employee,
                     clockedIn: row.punch_type === "clock_in",
                     lastPunchAt: row.timestamp,
+                    withinGeofence: row.within_geofence,
                   }
                 : employee,
             ),
@@ -75,10 +79,20 @@ export function AdminOnClock({ initial }: { initial: EmployeeStatus[] }) {
             key={employee.id}
             className="flex items-center justify-between gap-2 text-sm"
           >
-            <span>{employee.full_name}</span>
-            <Badge variant={employee.clockedIn ? "success" : "secondary"}>
-              {employee.clockedIn ? "In" : "Out"}
-            </Badge>
+            <span>
+              {employee.full_name}
+              {employee.clockedIn && employee.siteName && (
+                <span className="text-muted-foreground"> — {employee.siteName}</span>
+              )}
+            </span>
+            <div className="flex items-center gap-1">
+              {employee.clockedIn && employee.withinGeofence === false && (
+                <Badge variant="destructive">Out of range</Badge>
+              )}
+              <Badge variant={employee.clockedIn ? "success" : "secondary"}>
+                {employee.clockedIn ? "In" : "Out"}
+              </Badge>
+            </div>
           </div>
         ))}
       </CardContent>
