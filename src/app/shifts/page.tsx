@@ -45,6 +45,7 @@ export default async function ShiftsPage({
   const { data: shifts } = await supabase
     .from("shifts")
     .select("*, sites(name)")
+    .eq("schedule_type", "marketplace")
     .in("status", ["open", "claimed"])
     .order("date")
     .order("start_time")
@@ -97,6 +98,12 @@ export default async function ShiftsPage({
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Shift Board</h1>
         <div className="flex gap-4">
+          <Link
+            href="/weekly-schedule"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            Weekly Schedule
+          </Link>
           <Link href="/schedule" className="text-sm text-muted-foreground hover:underline">
             My Schedule
           </Link>

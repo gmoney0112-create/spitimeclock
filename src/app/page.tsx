@@ -125,6 +125,12 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground">{profile.role}</p>
         </div>
         <div className="flex items-center gap-4">
+          <Link
+            href="/weekly-schedule"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            Weekly Schedule
+          </Link>
           <Link href="/shifts" className="text-sm text-muted-foreground hover:underline">
             Shift Board
           </Link>

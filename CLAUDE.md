@@ -398,3 +398,26 @@ Installable to a phone home screen via a web app manifest + service worker — n
 - Shift swap requests, flagged-entry one-click correction workflow beyond basic review
 - Labor cost dashboard (hours × rate per site)
 - Phase 3: native app (Expo/React Native) for background geofencing and push notifications when the app is closed, client portal, photo/note check-ins, site history map
+
+---
+
+# Part 3: Weekly Schedule Builder
+
+A second, parallel way shifts get filled, alongside the open-marketplace claim workflow from Part 1 — office manager/HR directly assign a preplanned weekly schedule instead of posting it for anyone to claim.
+
+## 21. Marketplace vs. Assigned
+
+`shifts.schedule_type` (`marketplace` | `assigned`) distinguishes the two flows on the same table, rather than building a second parallel shifts model:
+
+- **`marketplace`** (default) — the existing Part 1 flow, unchanged: admin posts an open shift, employees claim it, admin approves one claim. Spontaneous, unplanned coverage.
+- **`assigned`** — new: admin/office_manager creates the shift with `assigned_to` already set to a specific employee. No claiming, no approval step — it's on the schedule the moment it's created. Never appears on the Shift Board (`/shifts` filters to `schedule_type = 'marketplace'` explicitly).
+
+`shifts.assigned_to` (fk → employees, nullable) holds who it's assigned to for this type.
+
+## 22. Weekly Schedule View
+
+`/weekly-schedule` — visible to every employee (read-only: full week, every employee's assigned shifts, grouped by day). Admin/office_manager additionally get an inline "Add Assigned Shift" form, a Remove action per shift (soft-cancels via `status = 'cancelled'`, same convention as marketplace shift cancellation — never hard-deleted), and a "Copy this week to next week" action that duplicates the week's assigned shifts forward by 7 days. That copy action is the "regular weekly schedule" recurrence mechanism for v1 — a lightweight duplicate-and-adjust rather than a full recurrence-rule engine, consistent with the project's sprint discipline of not building more than what's asked.
+
+An employee's own assigned shifts also show up merged into `/schedule` (My Schedule) alongside their approved marketplace claims, labeled "Scheduled" vs. "Claimed" so the source is still clear.
+
+No RLS changes were needed — `shifts_select_all` already lets every employee read every shift regardless of type, and `shifts_write_admin` already lets admin/office_manager write any column, including the two new ones.

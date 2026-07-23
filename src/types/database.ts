@@ -11,6 +11,7 @@ export type TimesheetStatus = "pending_review" | "approved" | "exported";
 export type PayPeriodStatus = "open" | "closed" | "exported";
 export type ShiftStatus = "open" | "claimed" | "filled" | "cancelled";
 export type ShiftClaimStatus = "pending" | "approved" | "denied";
+export type ShiftScheduleType = "marketplace" | "assigned";
 
 export interface Employee {
   id: string;
@@ -81,6 +82,8 @@ export interface Shift {
   status: ShiftStatus;
   posted_by: string;
   site_id: string | null;
+  schedule_type: ShiftScheduleType;
+  assigned_to: string | null;
   created_at: string;
 }
 
