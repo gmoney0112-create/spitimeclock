@@ -4,6 +4,7 @@ import { getCurrentEmployee } from "@/lib/get-current-employee";
 import { ClockPanel } from "@/components/clock-panel";
 import { AdminOnClock } from "@/components/admin-on-clock";
 import { SignOutButton } from "@/components/sign-out-button";
+import { todayISO } from "@/lib/week";
 import type { PunchType } from "@/types/database";
 
 export default async function DashboardPage() {
@@ -28,7 +29,7 @@ export default async function DashboardPage() {
     .limit(1)
     .maybeSingle();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const [{ data: claimedRows }, { data: assignedRows }] = await Promise.all([
     supabase
       .from("shift_claims")

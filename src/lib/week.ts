@@ -12,6 +12,11 @@ export function addDays(dateStr: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// The office's fixed business timezone (matches CLAUDE.md's timesheet
+// calculation and geofencing) -- not the server's UTC clock, which would
+// roll to "tomorrow" hours before Central Time actually does.
+const BUSINESS_TIMEZONE = "America/Chicago";
+
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: BUSINESS_TIMEZONE }).format(new Date());
 }
