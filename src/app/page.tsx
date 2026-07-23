@@ -29,33 +29,40 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   const today = new Date().toISOString().slice(0, 10);
-  const { data: activeShiftRows } = await supabase
-    .from("shift_claims")
-    .select("shifts!inner(id, title, date, sites(name))")
-    .eq("employee_id", profile.id)
-    .eq("status", "approved")
-    .eq("shifts.date", today)
-    .order("start_time", { foreignTable: "shifts" })
-    .limit(1);
+  const [{ data: claimedRows }, { data: assignedRows }] = await Promise.all([
+    supabase
+      .from("shift_claims")
+      .select("shifts!inner(id, title, date, start_time, sites(name))")
+      .eq("employee_id", profile.id)
+      .eq("status", "approved")
+      .eq("shifts.date", today),
+    supabase
+      .from("shifts")
+      .select("id, title, date, start_time, sites(name)")
+      .eq("schedule_type", "assigned")
+      .eq("assigned_to", profile.id)
+      .eq("date", today)
+      .neq("status", "cancelled"),
+  ]);
 
-  const activeShiftRow = activeShiftRows?.[0];
-  const activeShiftEntry = activeShiftRow
-    ? Array.isArray(activeShiftRow.shifts)
-      ? activeShiftRow.shifts[0]
-      : activeShiftRow.shifts
-    : null;
-  const activeShiftSite = activeShiftEntry
-    ? Array.isArray(activeShiftEntry.sites)
-      ? activeShiftEntry.sites[0]
-      : activeShiftEntry.sites
-    : null;
-  const activeShift = activeShiftEntry
-    ? {
-        id: activeShiftEntry.id as string,
-        title: activeShiftEntry.title as string,
-        siteName: (activeShiftSite?.name as string | undefined) ?? null,
-      }
-    : null;
+  const todaysShifts = [
+    ...(claimedRows ?? []).map((row) => {
+      const shift = Array.isArray(row.shifts) ? row.shifts[0] : row.shifts;
+      return shift;
+    }),
+    ...(assignedRows ?? []),
+  ]
+    .filter((s): s is NonNullable<typeof s> => Boolean(s))
+    .map((s) => {
+      const site = Array.isArray(s.sites) ? s.sites[0] : s.sites;
+      return {
+        id: s.id as string,
+        title: s.title as string,
+        siteName: (site?.name as string | undefined) ?? null,
+        start_time: s.start_time as string,
+      };
+    })
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   const isAdmin = profile.role === "admin" || profile.role === "office_manager";
 
@@ -170,7 +177,7 @@ export default async function DashboardPage() {
         <ClockPanel
           initiallyClockedIn={lastPunch?.punch_type === "clock_in"}
           lastPunchAt={lastPunch?.timestamp ?? null}
-          activeShift={activeShift}
+          todaysShifts={todaysShifts}
         />
         {isAdmin && <AdminOnClock initial={adminInitial} />}
       </div>

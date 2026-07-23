@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -12,11 +13,13 @@ import {
 } from "@/components/ui/card";
 import { clockIn, clockOut } from "@/app/actions/punches";
 
-export interface ActiveShift {
+export interface TodayShift {
   id: string;
   title: string;
   siteName: string | null;
 }
+
+const GENERAL_VALUE = "__general__";
 
 function getPosition(): Promise<GeolocationPosition | null> {
   return new Promise((resolve) => {
@@ -35,16 +38,21 @@ function getPosition(): Promise<GeolocationPosition | null> {
 export function ClockPanel({
   initiallyClockedIn,
   lastPunchAt,
-  activeShift,
+  todaysShifts,
 }: {
   initiallyClockedIn: boolean;
   lastPunchAt: string | null;
-  activeShift?: ActiveShift | null;
+  todaysShifts: TodayShift[];
 }) {
   const [clockedIn, setClockedIn] = useState(initiallyClockedIn);
+  const [selectedId, setSelectedId] = useState(
+    todaysShifts[0]?.id ?? GENERAL_VALUE,
+  );
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const selectedShift = todaysShifts.find((s) => s.id === selectedId) ?? null;
 
   function handleClick() {
     setError(null);
@@ -52,10 +60,10 @@ export function ClockPanel({
     startTransition(async () => {
       let opts: { shiftId?: string; latitude?: number; longitude?: number } | undefined;
 
-      if (activeShift) {
+      if (selectedShift) {
         const position = await getPosition();
         opts = {
-          shiftId: activeShift.id,
+          shiftId: selectedShift.id,
           ...(position
             ? { latitude: position.coords.latitude, longitude: position.coords.longitude }
             : {}),
@@ -67,7 +75,7 @@ export function ClockPanel({
         setError(result.error);
         return;
       }
-      if (activeShift && result.withinGeofence === false) {
+      if (selectedShift && result.withinGeofence === false) {
         setNotice(
           "You appear to be outside the site's radius — this punch was flagged for admin review.",
         );
@@ -86,14 +94,34 @@ export function ClockPanel({
           </Badge>
         </CardTitle>
         <CardDescription>
-          {activeShift
-            ? `Clocking in for: ${activeShift.title}${activeShift.siteName ? ` @ ${activeShift.siteName}` : ""}`
+          {selectedShift
+            ? `Clocking in for: ${selectedShift.title}${selectedShift.siteName ? ` @ ${selectedShift.siteName}` : ""}`
             : lastPunchAt
               ? `Last punch: ${new Date(lastPunchAt).toLocaleString()}`
               : "No punches recorded yet."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        {todaysShifts.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="shift-select">Clocking in for</Label>
+            <select
+              id="shift-select"
+              value={selectedId}
+              disabled={clockedIn || pending}
+              onChange={(e) => setSelectedId(e.target.value)}
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            >
+              {todaysShifts.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                  {s.siteName ? ` @ ${s.siteName}` : ""}
+                </option>
+              ))}
+              <option value={GENERAL_VALUE}>General (no site)</option>
+            </select>
+          </div>
+        )}
         <Button
           size="lg"
           variant={clockedIn ? "destructive" : "default"}
