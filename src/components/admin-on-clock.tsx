@@ -86,8 +86,11 @@ export function AdminOnClock({ initial }: { initial: EmployeeStatus[] }) {
               )}
             </span>
             <div className="flex items-center gap-1">
-              {employee.clockedIn && employee.withinGeofence === false && (
+              {employee.clockedIn && employee.siteName && employee.withinGeofence === false && (
                 <Badge variant="destructive">Out of range</Badge>
+              )}
+              {employee.clockedIn && employee.siteName && employee.withinGeofence === null && (
+                <Badge variant="destructive">No GPS</Badge>
               )}
               <Badge variant={employee.clockedIn ? "success" : "secondary"}>
                 {employee.clockedIn ? "In" : "Out"}

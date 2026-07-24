@@ -184,9 +184,10 @@ export default async function AdminTimesheetsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Flagged Punches (Out of Geofence)</CardTitle>
+          <CardTitle>Flagged Punches (Geofence)</CardTitle>
           <CardDescription>
-            Clock-ins/outs recorded outside the assigned site&apos;s radius —
+            Clock-ins/outs that came back outside the assigned site&apos;s
+            radius, or where location access never came through at all —
             recorded, not blocked, but worth a look.
           </CardDescription>
         </CardHeader>
@@ -203,11 +204,16 @@ export default async function AdminTimesheetsPage({
                   site_name: string | null;
                   punch_type: string;
                   punch_timestamp: string;
+                  reason: "out_of_range" | "missing_location";
                 }) => (
                   <li key={p.punch_id}>
                     {p.full_name} — {p.punch_type} at{" "}
                     {new Date(p.punch_timestamp).toLocaleString()}
                     {p.site_name ? ` — expected near ${p.site_name}` : ""}
+                    {" — "}
+                    {p.reason === "out_of_range"
+                      ? "outside the geofence"
+                      : "no location data received"}
                   </li>
                 ),
               )}

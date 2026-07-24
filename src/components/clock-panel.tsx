@@ -60,14 +60,17 @@ export function ClockPanel({
     startTransition(async () => {
       let opts: { shiftId?: string; latitude?: number; longitude?: number } | undefined;
 
+      let gotPosition = false;
       if (selectedShift) {
-        const position = await getPosition();
-        opts = {
-          shiftId: selectedShift.id,
-          ...(position
-            ? { latitude: position.coords.latitude, longitude: position.coords.longitude }
-            : {}),
-        };
+        opts = { shiftId: selectedShift.id };
+        if (selectedShift.siteName) {
+          const position = await getPosition();
+          if (position) {
+            gotPosition = true;
+            opts.latitude = position.coords.latitude;
+            opts.longitude = position.coords.longitude;
+          }
+        }
       }
 
       const result = clockedIn ? await clockOut(opts) : await clockIn(opts);
@@ -75,10 +78,16 @@ export function ClockPanel({
         setError(result.error);
         return;
       }
-      if (selectedShift && result.withinGeofence === false) {
-        setNotice(
-          "You appear to be outside the site's radius — this punch was flagged for admin review.",
-        );
+      if (selectedShift?.siteName) {
+        if (result.withinGeofence === false) {
+          setNotice(
+            "You appear to be outside the site's radius — this punch was flagged for admin review.",
+          );
+        } else if (!gotPosition) {
+          setNotice(
+            "Location access wasn't available, so this punch couldn't be GPS-verified — it's been flagged for admin review. Try allowing location access if prompted next time.",
+          );
+        }
       }
       setClockedIn(!clockedIn);
     });
