@@ -1,9 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionState = { error: string | null };
+export type ResetRequestState = { error: string | null; sent: boolean };
 
 export async function signIn(
   _prevState: AuthActionState,
@@ -48,4 +50,25 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function requestPasswordReset(
+  _prevState: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const email = String(formData.get("email") ?? "");
+  const origin = (await headers()).get("origin");
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/confirm?next=/reset-password`,
+  });
+
+  if (error) {
+    return { error: error.message, sent: false };
+  }
+
+  // Always report success, even if the email doesn't match an account —
+  // confirming/denying an email's existence here would leak who has a login.
+  return { error: null, sent: true };
 }

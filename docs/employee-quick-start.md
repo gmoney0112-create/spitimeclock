@@ -5,6 +5,7 @@
 1. Go to the app URL and you'll land on the sign-in page.
 2. **First time?** Click "New here? Create an account," enter your name, email, and a password (6+ characters), then click **Create account**. You're in immediately — no email confirmation needed.
 3. **After that**, just enter your email and password and click **Sign in**.
+4. **Forgot your password?** Click **Forgot password?** on the sign-in screen, enter your email, and a reset link will be emailed to you — click it and set a new password. If it doesn't show up in a few minutes, check spam.
 
 ## Clock in / Clock out
 
